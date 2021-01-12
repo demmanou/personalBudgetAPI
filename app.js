@@ -3,7 +3,7 @@ const app = express();
 const bodyParser = require('body-parser');
 const { request } = require('express');
 
-port = 3000;
+port = process.argv[2] || 3000;
 
 const totalBudget = 1200;
 const envelopes = {
@@ -55,7 +55,7 @@ app.post('/envelopes', (req, res, next) => {
         // check if the POST request includes the proper fields
         if (!(reqBodyKeys.includes('name') && reqBodyKeys.includes('budget'))) { return res.sendStatus(400) };
         // console.log(req.body.name);
-        // check if the resource requested is created already exists
+        // check if the resource requested already exists
         if (envelopes[req.body.name]) { return res.send('Resource already exists!') };
         let envelopesArray = Object.keys(envelopes);
         // console.log(envelopesArray)
@@ -69,6 +69,7 @@ app.post('/envelopes', (req, res, next) => {
     })
 })
 
+// should only accept a budget: <budget> format
 app.put('/envelopes/:envelopeName', (req, res, next) => {
     let finalData = '';
     req.on('data', (data) => {
@@ -77,6 +78,8 @@ app.put('/envelopes/:envelopeName', (req, res, next) => {
     req.on('end', () => {
         req.body = JSON.parse(finalData);
         let requestedKeys = Object.keys(req.body);
+        console.log(requestedKeys[0]);
+        if (requestedKeys[0] !== 'budget') return res.sendStatus(400);
         // let existingEnvelopes = Object.keys(envelopes);
         // if (!requestedKeys.every(key => envelopes.existingEnvelopes[0].includes(key))) { return res.sendStatus(400) };
         requestedKeys.forEach(key => {
