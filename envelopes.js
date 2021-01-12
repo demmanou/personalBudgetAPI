@@ -1,54 +1,40 @@
 const express = require('express');
+const {pool} = require('./config');
+
 const router = express.Router();
 
-const envelopesDB = {
-    groceries: {
-        id: 1,
-        budget: '',
-    },
-    gas: {
-        id: 2,
-        budget: 300,
-    },
-    cosmetics: {
-        id: 3,
-        budget: 300,
-    },
-    clothing: {
-        id: 4,
-        budget: '',
-    },
-    food: {
-        id: 5,
-        budget: '',
-    },
-    misc: {
-        id: 6,
-        budget: '',
-    },
-}
-
 router.get('/', (req, res, next) => {
-    res.send(envelopesDB);
+    pool.query('SELECT * FROM envelopes', (error, results) => {
+        if (error) throw error;
+        res.send(results.rows);
+    })
 })
 
 // will work with JSON name: <name>, budget: <budget>
 router.post('/', (req, res, next) => {
-    let reqBodyKeys = Object.keys(req.body);
     // check if the POST request includes the proper fields
-    if (!(reqBodyKeys.includes('name') && reqBodyKeys.includes('budget'))) { return res.sendStatus(400) };
+    if (!(req.body.name && req.body.budget)) { return res.sendStatus(400) };
     // console.log(req.body.name);
     // check if the resource requested already exists
-    if (envelopesDB[req.body.name]) { return res.send('Resource already exists!') };
-    let envelopesDBArray = Object.keys(envelopesDB);
-    // console.log(envelopesDBArray)
-    let newId = envelopesDBArray.length + 1;
-    req.body.id = newId;
-    envelopesDB[req.body.name] = {
-        budget: req.body.budget,
-        id: req.body.id,
-    };
-    res.status(201).send(req.body.name + ' envelope added with ' + req.body.budget + ' as its budget and ' + req.body.id + ' as its id');
+    pool.query(
+        'SELECT name FROM envelopes WHERE name=$1 limit 1',
+        [req.body.name],
+        (error, results) => {
+            if (error) throw error;
+            if (results.rows.length) {
+                return res.send('Resource already exists!');
+            }
+            pool.query(
+                'INSERT INTO envelopes (name, budget) values ($1, $2)', 
+                [req.body.name, req.body.budget], 
+                (error) => {
+                    if (error) throw error;
+                    // if (envelopesDB[req.body.name]) { return res.send('Resource already exists!') };
+                    res.status(201).send(req.body.name + ' envelope added with ' + req.body.budget + ' as its budget');
+                }
+            )
+        }
+    )
 })
 
 // should only accept a budget: <budget> format
