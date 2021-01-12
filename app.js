@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const { request } = require('express');
+const morgan = require('morgan');
 
 port = process.argv[2] || 3000;
 
@@ -33,6 +34,7 @@ const envelopes = {
     },
 }
 
+app.use(morgan('tiny'));
 app.use(bodyParser.json());
 
 app.get('/', (req, res, next) => {
