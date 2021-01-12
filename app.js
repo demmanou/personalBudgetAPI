@@ -108,7 +108,8 @@ app.post('/envelopes/transfer/:from/:to', (req, res, next) => {
     })
     req.on('end', () => {
         req.body = JSON.parse(finalData);
-        if (!Object.keys(req.body).includes('budget')) { return res.sendStatus(400) }
+        let requestedKeys = Object.keys(req.body);
+        if (requestedKeys[0] !== 'budget') return res.sendStatus(400);
         envelopes[req.params.from].budget -= Number(req.body.budget);
         envelopes[req.params.to].budget += Number(req.body.budget);
         res.send('Transfer performed');
