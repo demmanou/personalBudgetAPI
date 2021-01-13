@@ -21,13 +21,12 @@ router.post('/', (req, res, next) => {
         [req.body.name],
         (error, results) => {
             if (error) throw error;
-            if (results.rows.length) {
-                return res.send('Resource already exists!');
-            }
             pool.query(
                 'INSERT INTO envelopes (name, budget) values ($1, $2)', 
                 [req.body.name, req.body.budget], 
                 (error) => {
+                    // check if the SQL statement throws an error when the name already exists (name has unique constraint)
+                    if (error.code === '23505') return res.status(409).send('Resource already exists!');
                     if (error) throw error;
                     // if (envelopesDB[req.body.name]) { return res.send('Resource already exists!') };
                     res.status(201).send(req.body.name + ' envelope added with ' + req.body.budget + ' as its budget');
