@@ -15,23 +15,17 @@ router.post('/', (req, res, next) => {
     // check if the POST request includes the proper fields
     if (!(req.body.name && req.body.budget)) { return res.sendStatus(400) };
     // console.log(req.body.name);
-    // check if the resource requested already exists
     pool.query(
-        'SELECT name FROM envelopes WHERE name=$1',
-        [req.body.name],
-        (error, results) => {
-            if (error) throw error;
-            pool.query(
-                'INSERT INTO envelopes (name, budget) values ($1, $2)', 
-                [req.body.name, req.body.budget], 
-                (error) => {
-                    // check if the SQL statement throws an error when the name already exists (name has unique constraint)
-                    if (error.code === '23505') return res.status(409).send('Resource already exists!');
-                    if (error) throw error;
-                    // if (envelopesDB[req.body.name]) { return res.send('Resource already exists!') };
-                    res.status(201).send(req.body.name + ' envelope added with ' + req.body.budget + ' as its budget');
-                }
-            )
+        'INSERT INTO envelopes (name, budget) values ($1, $2)', 
+        [req.body.name, req.body.budget], 
+        (error) => {
+            // check if the SQL statement throws an error when the name already exists (name has unique constraint)
+            if (error) {
+                if (error.code === '23505') return res.status(409).send('Resource already exists!');
+                throw error;
+            }
+            // if (envelopesDB[req.body.name]) { return res.send('Resource already exists!') };
+            res.status(201).send(req.body.name + ' envelope added with ' + req.body.budget + ' as its budget');
         }
     )
 })
