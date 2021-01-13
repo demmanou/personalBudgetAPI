@@ -17,7 +17,7 @@ router.post('/', (req, res, next) => {
     // console.log(req.body.name);
     // check if the resource requested already exists
     pool.query(
-        'SELECT name FROM envelopes WHERE name=$1 limit 1',
+        'SELECT name FROM envelopes WHERE name=$1',
         [req.body.name],
         (error, results) => {
             if (error) throw error;
@@ -39,37 +39,105 @@ router.post('/', (req, res, next) => {
 
 // should only accept a budget: <budget> format
 router.put('/:envelopeName', (req, res, next) => {
-    req.body = JSON.parse(finalData);
-    let requestedKeys = Object.keys(req.body);
-    console.log(requestedKeys[0]);
-    if (requestedKeys[0] !== 'budget') return res.sendStatus(400);
-    // let existingenvelopesDB = Object.keys(envelopesDB);
-    // if (!requestedKeys.every(key => envelopesDB.existingenvelopesDB[0].includes(key))) { return res.sendStatus(400) };
-    requestedKeys.forEach(key => {
-        envelopesDB[req.params.envelopeName][key] = req.body[key];
-    })
-    res.send('Resource updated');
+    if (!req.body.budget) return res.sendStatus(400);
+    pool.query(
+        'SELECT * FROM envelopes WHERE name=$1',
+        [req.params.envelopeName],
+        (error, results) => {
+            if (error) throw error;
+            // if resource not found 404
+            if (!results.rows.length) return res.sendStatus(404);
+            pool.query(
+                'UPDATE envelopes SET budget=$1 WHERE name=$2',
+                [req.body.budget, req.params.envelopeName],
+                (error, results) => {
+                    if (error) throw error;
+                    res.sendStatus(204);
+                }
+            )
+        }
+    );
 });
 
 router.delete('/:envelopeName', (req, res, next) => {
-    if (Object.keys(envelopesDB).includes(req.params.envelopeName)) {
-        delete envelopesDB[req.params.envelopeName];
-        return res.send('Deleted');
-    }
-    return res.sendStatus(400);
+    pool.query(
+        'SELECT * FROM envelopes WHERE name=$1',
+        [req.params.envelopeName],
+        (error, results) => {
+            if (error) throw error;
+            // if resource not found 404
+            if (!results.rows.length) return res.sendStatus(404);
+            pool.query(
+                'DELETE FROM envelopes WHERE name=$1',
+                [req.params.envelopeName],
+                (error, results) => {
+                    if (error) throw error;
+                    res.sendStatus(204);
+                }
+            )
+        }
+    );
 })
 
 router.get('/:envelopeName', (req, res, next) => {
-    res.send(envelopesDB[req.params.envelopeName]);
+    pool.query(
+        'SELECT * FROM envelopes WHERE name=$1',
+        [req.params.envelopeName],
+        (error, results) => {
+            if (error) throw error;
+            // if resource not found 404
+            if (!results.rows.length) return res.sendStatus(404);
+            pool.query(
+                'SELECT * FROM envelopes WHERE name=$1',
+                [req.params.envelopeName],
+                (error, results) => {
+                    if (error) throw error;
+                    res.status(200).send(results.rows);
+                }
+            )
+        }
+    );
 })
 
 router.post('/transfer/:from/:to', (req, res, next) => {
-    req.body = JSON.parse(finalData);
-    let requestedKeys = Object.keys(req.body);
-    if (requestedKeys[0] !== 'budget') return res.sendStatus(400);
-    envelopesDB[req.params.from].budget -= Number(req.body.budget);
-    envelopesDB[req.params.to].budget += Number(req.body.budget);
-    res.send('Transfer performed');
+    // check if the POST request includes the proper fields
+    if (!req.body.budget) { return res.sendStatus(400) };
+    // check if the resources requested  exist
+    console.log(req.params.from, req.params.to);
+    pool.query(
+        'SELECT name FROM envelopes WHERE name=$1 OR name=$2',
+        [req.params.from, req.params.to],
+        (error, results) => {
+            if (error) throw error;
+            if (results.rows.length !== 2) {
+                return res.status(404).send('Didn\t find requested resources');
+            }
+            pool.query(
+                'SELECT budget FROM envelopes WHERE name=$1 OR name=$2', 
+                [req.params.from, req.params.to], 
+                (error, results) => {
+                    if (error) throw error;
+                    // console.log(results);
+                    // if (envelopesDB[req.body.name]) { return res.send('Resource already exists!') };
+                    pool.query(
+                        'UPDATE envelopes SET budget=$1 WHERE name=$2',
+                        [results.rows[0].budget - req.body.budget, req.params.from],
+                        (error) => {
+                            if (error) throw error;
+                            pool.query(
+                                'UPDATE envelopes SET budget=$1 WHERE name=$2',
+                                [results.rows[1].budget + req.body.budget, req.params.to],
+                                (error) => {
+                                    if (error) throw error;
+                                    res.sendStatus(200);
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        }
+    )
 })
 
 module.exports = router;
