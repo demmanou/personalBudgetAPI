@@ -1,5 +1,5 @@
 const express = require('express');
-const envelopes = require('./envelopes');
+const envelopes = require('./routes/envelopes');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 
