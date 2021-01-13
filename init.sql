@@ -8,11 +8,13 @@ create table envelopes (
 create table transactions (
     id serial primary key,
     date date default current_date,
-    payment_amount decimal not null,
-    payment_recipient varchar(255) not null,
+    amount decimal not null,
+    recipient varchar(255) not null,
     envelope_name varchar(255) references envelopes(name)
 );
 
 insert into envelopes (name, budget) values ('groceries', 800);
 
 insert into envelopes (name, budget) values ('transportation', 100);
+
+insert into transactions (amount, recipient, envelope_name) values (100, 'dimitris', 'groceries');
