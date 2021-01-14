@@ -3,12 +3,61 @@ const {pool} = require('../db/config');
 
 const router = express.Router();
 
+/**
+   * @swagger
+   * definitions:
+   *   Envelope:
+   *     properties:
+   *       id:
+   *         type: integer
+   *       name:
+   *         type: string
+   *       budget:
+   *         type: integer
+   */
+
+/**
+ * @swagger
+ * /api/envelopes:
+ *   get:
+ *     tags:
+ *       - Envelopes
+ *     description: Returns all envelopes
+ *     produces:
+ *       - application/json
+ *     responses:
+ *       200:
+ *         description: An array of envelopes
+ *         schema:
+ *           $ref: '#/definitions/Envelope'
+ */
 router.get('/', (req, res, next) => {
     pool.query('SELECT * FROM envelopes', (error, results) => {
         if (error) throw error;
         res.send(results.rows);
     })
 })
+
+/**
+ * @swagger
+ * /api/envelopes:
+ *   post:
+ *     tags:
+ *       - Envelopes
+ *     description: Creates a new envelope
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: envelope
+ *         description: Envelope object
+ *         in: body
+ *         required: true
+ *         schema:
+ *           $ref: '#/definitions/Envelope'
+ *     responses:
+ *       200:
+ *         description: Successfully created
+ */
 
 // will work with JSON name: <name>, budget: <budget>
 router.post('/', (req, res, next) => {
@@ -29,6 +78,26 @@ router.post('/', (req, res, next) => {
         }
     )
 })
+
+/**
+ * @swagger
+ * /api/envelopes/:envelopeName:
+ *   put:
+ *     tags:
+ *       - Envelopes
+ *     description: Updates the fields of an existing envelope
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: envelope
+ *         description: Fields for the Envelope object
+ *         in: body
+ *         schema:
+ *           $ref: '#/definitions/Envelope'
+ *     responses:
+ *       200:
+ *         description: Successfully created
+ */
 
 // should only accept a budget: <budget> format
 router.put('/:envelopeName', (req, res, next) => {
@@ -52,6 +121,26 @@ router.put('/:envelopeName', (req, res, next) => {
     );
 });
 
+/**
+ * @swagger
+ * /api/envelopes/:envelopeName:
+ *   delete:
+ *     tags:
+ *       - Envelopes
+ *     description: Deletes a single envelope
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: envelopeName
+ *         description: Envelope's name
+ *         in: path
+ *         required: true
+ *         type: string
+ *     responses:
+ *       200:
+ *         description: Successfully deleted
+ */
+
 router.delete('/:envelopeName', (req, res, next) => {
     pool.query(
         'SELECT * FROM envelopes WHERE name=$1',
@@ -71,6 +160,28 @@ router.delete('/:envelopeName', (req, res, next) => {
         }
     );
 })
+
+/**
+ * @swagger
+ * /api/envelopes/{envelopeName}:
+ *   get:
+ *     tags:
+ *       - Envelopes
+ *     description: Returns a single envelope
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: envelopeName
+ *         description: Envelope's name
+ *         in: path
+ *         required: true
+ *         type: string
+ *     responses:
+ *       200:
+ *         description: A single envelope
+ *         schema:
+ *           $ref: '#/definitions/Envelope'
+ */
 
 router.get('/:envelopeName', (req, res, next) => {
     pool.query(
