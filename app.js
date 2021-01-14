@@ -10,8 +10,8 @@ const app = express();
 app.use(morgan('tiny'));
 app.use(bodyParser.json());
 
-app.use('/envelopes', envelopes);
-app.use('/transactions', transactions);
+app.use('/api/envelopes', envelopes);
+app.use('/api/transactions', transactions);
 
 const port = process.argv[2] || 3000;
 
